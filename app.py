@@ -12,7 +12,6 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///url_history.db'
 db = SQLAlchemy(app)
 app.app_context().push()
-api_token = 'E9Tcq8J30GOorspFf2qumCNzq7BaHyzlw5qOzsF8l7ablxHZzleNIDsobtKi'
 
 class Record(db.Model): 
     id = db.Column(db.Integer, primary_key=True)
