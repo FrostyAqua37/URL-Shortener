@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>URL Shortener</title>
+<script src="../scripts/form.js"></script>
+{% endblock %}
+
+{% block body %}
+<div>
+    <form action="/" id="url-form" method="post">
+        <h2>URL Shortener</h2>
+        <label for="original-url"></label><br>
+        <input type="text" id="original-url" name="original-url" placeholder="Enter Long URL here"><br>
+    </form>
+    <button type="submit" form="url-form" value="Submit">Format</button>
+    <h2></h2> 
+</div>
+{% endblock %}
+
