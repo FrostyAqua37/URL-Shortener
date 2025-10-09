@@ -7,6 +7,8 @@ from io import StringIO
 import random, string
 from urllib.parse import urlparse
 import requests
+from urllib.parse import urlencode
+import constants
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///url_history.db'
@@ -47,25 +49,26 @@ def retrieve_url():
         return render_template('index.html')
 
 def shorten_url(original_link):
-    request = {
-        'url': original_link,
-        'domain': 'http://tinyurl.com/api-create.php',
-        'alis': '',
-        'tags': '',
-        'expires_at': '',
-        'description':'string'
-    }
-    
     try:
-        response = requests.get(request)
-        response.raise_for_status()
+        headers = {
+            'Authorization': f'Bearer {constants.tiny_url_token}',
+            'Content-Type': 'application/json'
+        }
+
+        data = {
+            'url': original_link,
+            'domain': 'tinyurl.com',
+        }
+        response = requests.post(url='https://api.tinyurl.com/create', headers=headers, json=data)
 
     except requests.exceptions.RequestException as e:
-        return f"Error occurred whilst shortening the URL: {e}"
+        return e.args[0]
 
     else:
+        if response.ok:
+            data = response.json()
+            return data['data']['tiny_url']
         return response.text
-
 
 def create_qr_code(url_link):
     qr_code = qrcode.make(url_link, image_factory=qrcode.image.svg.SvgImage)
