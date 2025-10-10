@@ -1,19 +1,18 @@
-from flask import Flask, render_template, url_for, request, send_file
+from flask import Flask, render_template, url_for, request, send_file, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 import qrcode
 import qrcode.image.svg
 from datetime import datetime
-from io import StringIO
-import random, string
-from urllib.parse import urlparse
 import requests
-from urllib.parse import urlencode
 import constants
+import validators
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///url_history.db'
 db = SQLAlchemy(app)
 app.app_context().push()
+app.secret_key= constants.app_secret_key
+error_message = None
 
 class Record(db.Model): 
     id = db.Column(db.Integer, primary_key=True)
@@ -22,32 +21,27 @@ class Record(db.Model):
     qr_code = db.Column(db.BLOB, nullable=False)
     date_logged = db.Column(db.DateTime, default=datetime.utcnow)
 
-@app.route("/", methods=['POST', 'GET'])
+@app.route("/")
 def index():
+    return render_template('index.html')
+
+@app.route("/", methods=['POST', 'GET'])
+def validate_url():
     if request.method == 'POST':
         original_url = request.form['original-url']
         try:
-            urlparse(original_url)
+            if not validators.url(original_url):
+                error_message = 'Error: Invalid URL Link.'
+                flash(error_message)        
+                return render_template('index.html', error=error_message)
         except ValueError:
-            return "render_template('index.html')"
+            return render_template('index.html')
         else:
-            return shorten_url(original_url)
+            flash(shorten_url(original_url))
+            return redirect(url_for('index'))
     else:
         return render_template('index.html')
-
-@app.route("/#", methods=['POST', 'GET'])
-def retrieve_url():
-    if request.method == 'POST':
-        original_url = request.form['original-url']
-        try:
-            parsed_url = urlparse(original_url).query
-        except ValueError:
-            return "render_template('index.html')"
-        else:
-            return shorten_url(parsed_url)
-    else:
-        return render_template('index.html')
-
+    
 def shorten_url(original_link):
     try:
         headers = {
@@ -61,23 +55,39 @@ def shorten_url(original_link):
         }
         response = requests.post(url='https://api.tinyurl.com/create', headers=headers, json=data)
 
-    except requests.exceptions.RequestException as e:
-        return e.args[0]
-
+    except requests.exceptions.RequestException as error:
+        flash(error)
+        return render_template('index.html', error=error)
     else:
-        if response.ok:
-            data = response.json()
-            return data['data']['tiny_url']
-        return response.text
-
+        data = response.json()
+        match response.status_code:
+            case 200:      
+                return data['data']['tiny_url']
+            
+            case 422:
+                error_message = 'Error: Invalid URL link or Alias field is too long.'
+                flash(error_message)
+                return render_template('index.html', error=error_message)
+        
+            case _:
+                error_message = 'Error: Something went wrong, please try again.'
+                flash(error_message)
+                return render_template('index.html', error=error_message)
+               
 def create_qr_code(url_link):
-    qr_code = qrcode.make(url_link, image_factory=qrcode.image.svg.SvgImage)
+    ...
 
-    with open('qr_code.svg', 'wb') as qr:
-        qr_code.save(qr)
+def store_record():
+    ...
 
-    img = './static/qr_code.svg'
-    return render_template('index.html', img=img)
+def delete_record():
+    ...
+
+def update_record():
+    ...
+
+def retrieve_record():
+    ...
 
 if __name__ == "__main__":
     app.run(debug=True)
