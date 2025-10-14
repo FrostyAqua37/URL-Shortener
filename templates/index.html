@@ -6,7 +6,7 @@
 
 {% block body %}
 <div>
-    <form action="{{url_for('validate_url')}}" id="url-form" method="post">
+    <form action="{{url_for('format_url')}}" id="url-form" method="post">
         <h2>URL Shortener</h2>
         <label for="original-url"></label><br>
         <input type="text" id="original-url" name="original-url" placeholder="Enter Long URL here"><br>

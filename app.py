@@ -13,11 +13,12 @@ db = SQLAlchemy(app)
 app.app_context().push()
 app.secret_key= constants.app_secret_key
 error_message = None
+original_url = ""
 
-class Record(db.Model): 
+class Urls(db.Model): 
     id = db.Column(db.Integer, primary_key=True)
     original_url = db.Column(db.String(255), nullable=False)
-    formatted_url = db.Column(db.String(255), nullable=False)
+    short_url = db.Column(db.String(255), nullable=False)
     qr_code = db.Column(db.BLOB, nullable=False)
     date_logged = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -25,23 +26,20 @@ class Record(db.Model):
 def index():
     return render_template('index.html')
 
-@app.route("/", methods=['POST', 'GET'])
-def validate_url():
-    if request.method == 'POST':
-        original_url = request.form['original-url']
-        try:
-            if not validators.url(original_url):
-                error_message = 'Error: Invalid URL Link.'
-                flash(error_message)        
-                return render_template('index.html', error=error_message)
-        except ValueError:
-            return render_template('index.html')
+@app.route("/", methods=['POST'])
+def format_url():
+    original_url = request.form['original-url']
+    if not validators.url(original_url):
+        flash('Error: Invalid URL.')
+        return redirect('/')
+    else:
+        query = retrieve_record(original_url)
+        if query:
+            flash(query)
         else:
             flash(shorten_url(original_url))
-            return redirect(url_for('index'))
-    else:
-        return render_template('index.html')
-    
+        return redirect('/')
+        
 def shorten_url(original_link):
     try:
         headers = {
@@ -64,30 +62,39 @@ def shorten_url(original_link):
             case 200:      
                 return data['data']['tiny_url']
             
+            case 401:
+                flash('Error: Invalid authorization for this resource. Please check your API token.')
+
+            case 405:
+                flash('Error: You do not have permission to access this resource.')
+
             case 422:
-                error_message = 'Error: Invalid URL link or Alias field is too long.'
+                error_message = 'Error: Invalid URL link or alias is too long.'
                 flash(error_message)
-                return render_template('index.html', error=error_message)
         
             case _:
                 error_message = 'Error: Something went wrong, please try again.'
                 flash(error_message)
-                return render_template('index.html', error=error_message)
+            
+        return redirect('/')
                
-def create_qr_code(url_link):
+def create_qr(original_link):
     ...
 
 def store_record():
     ...
-
+        
 def delete_record():
     ...
 
 def update_record():
     ...
 
-def retrieve_record():
-    ...
+def retrieve_record(url):
+    try:
+        return Urls.query.filter_by(original_url=url).all()
+    except:
+        return 
 
 if __name__ == "__main__":
     app.run(debug=True)
