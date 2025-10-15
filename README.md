@@ -1,5 +1,6 @@
 # URL-Shortener
-A simple personal web project to transform long URLs into shorter ones or QR codes. The program uses the TinyURL API service to shorten and format URLs. This web project is built upon the microframework Flask in Python. **The website requires an TinyUrl API token.**
+A simple personal web project to transform long URLs into shorter ones or QR codes. The program uses the TinyURL API service to shorten and format URLs. This web project is built upon the microframework Flask in Python. 
+**The website requires an TinyUrl API token.**
 
 ## Features
 * Includes an user interface that is displayed through the browser.
