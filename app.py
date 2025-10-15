@@ -19,7 +19,8 @@ class Urls(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     original_url = db.Column(db.String(255), nullable=False)
     short_url = db.Column(db.String(255), nullable=False)
-    qr_code = db.Column(db.BLOB, nullable=False)
+    alias = db.Column(db.String(255), nullable=True)
+    qr_code = db.Column(db.BLOB, nullable=True)
     date_logged = db.Column(db.DateTime, default=datetime.utcnow)
 
 @app.route("/")
@@ -29,18 +30,27 @@ def index():
 @app.route("/", methods=['POST'])
 def format_url():
     original_url = request.form['original-url']
+    #alias = request.form['alias']
     if not validators.url(original_url):
         flash('Error: Invalid URL.')
         return redirect('/')
     else:
-        query = retrieve_record(original_url)
-        if query:
-            flash(query)
+        record = Urls.query.filter_by(original_url=f'{original_url}').first()
+        if record:
+            flash(record.short_url)
         else:
-            flash(shorten_url(original_url))
+            short_url = shorten_url(original_url)
+            new_record = Urls(original_url=original_url, short_url=short_url)
+
+            try:
+                db.session.add(new_record)
+                db.session.commit()
+                flash(short_url)
+            except:
+                flash('Error: Something went wrong, please try again.')   
         return redirect('/')
         
-def shorten_url(original_link):
+def shorten_url(original_link, alias=""):
     try:
         headers = {
             'Authorization': f'Bearer {constants.tiny_url_token}',
@@ -55,27 +65,22 @@ def shorten_url(original_link):
 
     except requests.exceptions.RequestException as error:
         flash(error)
-        return render_template('index.html', error=error)
+        return redirect('/')
     else:
         data = response.json()
         match response.status_code:
             case 200:      
                 return data['data']['tiny_url']
-            
             case 401:
-                flash('Error: Invalid authorization for this resource. Please check your API token.')
-
+                error_message = 'Error: Invalid authorization for this resource. Please check your API token.'
             case 405:
-                flash('Error: You do not have permission to access this resource.')
-
+                error_message = 'Error: You do not have permission to access this resource.'
             case 422:
                 error_message = 'Error: Invalid URL link or alias is too long.'
-                flash(error_message)
-        
             case _:
                 error_message = 'Error: Something went wrong, please try again.'
-                flash(error_message)
-            
+
+        flash(error_message)            
         return redirect('/')
                
 def create_qr(original_link):
@@ -91,10 +96,7 @@ def update_record():
     ...
 
 def retrieve_record(url):
-    try:
-        return Urls.query.filter_by(original_url=url).all()
-    except:
-        return 
+   ...
 
 if __name__ == "__main__":
     app.run(debug=True)
