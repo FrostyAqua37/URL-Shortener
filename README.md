@@ -7,7 +7,7 @@ A simple personal web project to transform long URLs into shorter ones or QR cod
 * Shortens long URLs through the TinyURL API service (requires API token). 
 * Ability to copy the shortened URL directly to the clipboard (WIP). 
 * Ability to copy QR code from long URL (WIP).
-* Stores shortened URLs into an Database to be retrieved to future use (WIP).
+* Stores shortened URLs into an Database to be retrieved to future use.
 
 ## Installation
 **Clone the repository**
