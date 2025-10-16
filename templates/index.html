@@ -2,6 +2,7 @@
 
 {% block head %}
 <title>URL Shortener</title>
+<link rel="stylesheet" href="{{url_for('static', filename='css/index.css')}}">
 {% endblock %}
 
 {% block body %}
@@ -17,7 +18,21 @@
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
-                <h2>{{ message }}</h2>
+                {% if message.startswith('Error:') %}
+                    <h2>{{ message }}</h2>
+                {% else %}
+                    <h2>{{ message }}</h2>
+                    <button type="button" name="qr-code">
+                        <img src="https://img.icons8.com/officel/30/qr-code.png" 
+                        alt="qr-code">
+                    </button>
+                    <button type="button" name="share">
+                        <img src="https://img.icons8.com/ios-glyphs/30/share--v1.png" alt="share">Share
+                    </button>
+                    <button type="button" name="copy">
+                        <img src="https://img.icons8.com/ios-glyphs/30/copy.png" alt="copy">Copy
+                    </button>
+                {% endif %}
             {% endfor %}
         {% endif %}
     {% endwith %}
