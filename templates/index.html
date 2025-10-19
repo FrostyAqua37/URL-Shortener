@@ -3,39 +3,41 @@
 {% block head %}
 <title>URL Shortener</title>
 <link rel="stylesheet" href="{{url_for('static', filename='css/index.css')}}">
+<script src="../scripts/script.js"></script>
 {% endblock %}
 
 {% block body %}
-<div>
+<div class="url-container">
     <form action="{{url_for('format_url')}}" id="url-form" method="post">
         <h2>URL Shortener</h2>
-        <label for="original-url"></label>
-        <input type="text" id="original-url" name="original-url" placeholder="Enter Long URL here">
-        <!--<label for="alias"></label>
-        <input type="text" id="alias" name="alias" placeholder="Enter Custom Alias here"><br> -->
+
+        <div class="input-group">
+            <label for="original-url"></label>
+            <input type="text" id="original-url" name="original-url" placeholder="Enter Long URL here" autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <label for="alias"></label>
+            <input type="text" id="alias" name="alias" placeholder="Enter Custom Alias here" autocomplete="off">
+        </div>
+
+        <button type="submit" form="url-form" value="Submit">Shorten URL</button>
     </form>
-    <button type="submit" form="url-form" value="Submit">Format</button>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for message in messages %}
-                {% if message.startswith('Error:') %}
-                    <h2>{{ message }}</h2>
+    {% with message = get_flashed_messages() %}
+        {% if message %}
+            <div class="divider"></div>
+                {% if message[0].startswith('Error:') %}
+                    <h2>{{ message[0] }}</h2>
                 {% else %}
-                    <h2>{{ message }}</h2>
-                    <button type="button" name="qr-code">
-                        <img src="https://img.icons8.com/officel/30/qr-code.png" 
-                        alt="qr-code">
-                    </button>
-                    <button type="button" name="share">
-                        <img src="https://img.icons8.com/ios-glyphs/30/share--v1.png" alt="share">Share
-                    </button>
-                    <button type="button" name="copy">
-                        <img src="https://img.icons8.com/ios-glyphs/30/copy.png" alt="copy">Copy
-                    </button>
+                    <div class="media-options">
+                        <label for="shortened-url">Shortened URL</label>
+                        <input type="text" id="shortenedURL" value="{{ message[0] }}" disabled>
+                        
+                        <button type="button" name="share">Share</button>
+                        <button onclick="clipboard()" name="copy">Copy</button><br>
+                    </div>
                 {% endif %}
-            {% endfor %}
         {% endif %}
     {% endwith %}
 </div>
 {% endblock %}
-

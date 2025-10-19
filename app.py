@@ -4,14 +4,16 @@ import qrcode
 import qrcode.image.svg
 from datetime import datetime
 import requests
-import constants
+import constants #Local file with personal API Token.
 import validators
+from io import BytesIO
+from base64 import b64encode
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///url_history.db'
 db = SQLAlchemy(app)
 app.app_context().push()
-app.secret_key= constants.app_secret_key
+app.secret_key= constants.app_api_key
 error_message = None
 original_url = ""
 
@@ -20,7 +22,6 @@ class Urls(db.Model):
     original_url = db.Column(db.String(255), nullable=False)
     short_url = db.Column(db.String(255), nullable=False)
     alias = db.Column(db.String(255), nullable=True)
-    qr_code = db.Column(db.BLOB, nullable=True)
     date_logged = db.Column(db.DateTime, default=datetime.utcnow)
 
 @app.route("/")
@@ -30,7 +31,8 @@ def index():
 @app.route("/", methods=['POST'])
 def format_url():
     original_url = request.form['original-url']
-    #alias = request.form['alias']
+    alias = request.form['alias']
+    
     if not validators.url(original_url):
         flash('Error: Invalid URL.')
         return redirect('/')
@@ -39,9 +41,8 @@ def format_url():
         if record:
             flash(record.short_url)
         else:
-            short_url = shorten_url(original_url)
-            new_record = Urls(original_url=original_url, short_url=short_url)
-
+            short_url = shorten_url(original_url, alias)
+            new_record = Urls(original_url=original_url, short_url=short_url, alias=alias)
             try:
                 db.session.add(new_record)
                 db.session.commit()
@@ -50,7 +51,7 @@ def format_url():
                 flash('Error: Something went wrong, please try again.')   
         return redirect('/')
         
-def shorten_url(original_link, alias=""):
+def shorten_url(original_link, alias=None):
     try:
         headers = {
             'Authorization': f'Bearer {constants.tiny_url_token}',
@@ -60,6 +61,7 @@ def shorten_url(original_link, alias=""):
         data = {
             'url': original_link,
             'domain': 'tinyurl.com',
+            'alias' : alias,
         }
         response = requests.post(url='https://api.tinyurl.com/create', headers=headers, json=data)
 
@@ -83,9 +85,6 @@ def shorten_url(original_link, alias=""):
         flash(error_message)            
         return redirect('/')
                
-def create_qr(original_link):
-    ...
-
 def store_record():
     ...
         
@@ -94,9 +93,6 @@ def delete_record():
 
 def update_record():
     ...
-
-def retrieve_record(url):
-   ...
 
 if __name__ == "__main__":
     app.run(debug=True)
